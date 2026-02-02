@@ -81,8 +81,19 @@ Projects are expected to evolve during execution. Iteration is encouraged, but:
 
 ---
 
+## Get O3 Credentials for development and testing
+- Go to https://console.akave.ai/
+- Login with any provider
+- Go to the "Access keys" page
+- Copy your access key and secret key
+- Copy endpoint from "endpoints" section
+- Use the credentials and endpoint with any AWS client or SDK
+
+---
+
 ## Questions & Communication
-- Primary coordination: **Akave Discord (#akave)**
+- Primary coordination: **PLDG Discord (#akave)**
+- For faster response, reach out on Akave Builders telegram channel https://t.me/akavebuilders
 - Proposal or workflow questions: open a discussion or issue in this repo
 
 ---
