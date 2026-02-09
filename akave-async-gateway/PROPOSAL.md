@@ -164,3 +164,5 @@ result = ipc.create_bucket(None, bucket_name)
 By providing a working, scalable platform with clear Python SDK integration patterns, this project accelerates adoption and reduces integration barriers for developers choosing between Python and Go SDKs. It proves that Python SDK is not just functional but production-ready for demanding applications.
 
 **Key Message**: *Python SDK + Modern Async Patterns = Enterprise-Ready Storage Platform*
+
+A working MVP link - https://github.com/d4v1d03/Akave-platform-MVP#
