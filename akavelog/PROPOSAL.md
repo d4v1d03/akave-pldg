@@ -1,5 +1,6 @@
 # AkaveLog: Decentralized Log Ingestion, Storage, and Visualization using Akave O3
 
+
 ## Problem Statement
 Modern log management systems such as Graylog and ELK rely on centralized storage and compute-heavy infrastructure. As log volumes grow, teams face increasing costs, operational complexity, and vendor lock-in. These systems also provide limited transparency into how log data is stored and retained.
 
