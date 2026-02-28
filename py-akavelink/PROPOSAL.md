@@ -16,8 +16,8 @@ This project demonstrates **production-grade Python SDK integration** through a 
 
 - **Akave Python SDK**: `github.com/akave-ai/akavesdk-py`
 - **Akave IPC Node**: `connect.akave.ai:5500`
-- **Blockchain Explorer**: Transaction verification
-- **Developer Faucet**: Testnet funding
+- **Blockchain Explorer**: `https://explorer.akave.ai/`
+- **Developer Faucet**: `https://faucet.akave.ai/`
 
 ## Problem Statement
 
