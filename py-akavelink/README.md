@@ -1,4 +1,4 @@
-# Akave Platform MVP
+# py-akavelink
 
 Async bucket creation platform using Akave decentralized storage with FastAPI + Celery.
 

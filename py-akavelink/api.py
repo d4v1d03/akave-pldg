@@ -1,37 +1,14 @@
 from fastapi import FastAPI, HTTPException
-from pydantic import BaseModel
 from datetime import datetime
-from typing import Optional
 import uuid
 import asyncpg
 import os
 from worker import create_bucket_task
+from schemas import BucketCreateRequest, BucketCreateResponse, JobStatusResponse
 
-app = FastAPI(title="Akave Platform - Minimal MVP")
+app = FastAPI(title="py-akavelink")
 
 db_pool = None
-
-
-class BucketCreateRequest(BaseModel):
-    bucket_name: str
-
-
-class BucketCreateResponse(BaseModel):
-    job_id: str
-    bucket_name: str
-    status: str  # queued, processing, completed, failed
-    message: str
-
-
-class JobStatusResponse(BaseModel):
-    job_id: str
-    bucket_name: str
-    status: str
-    tx_hash: Optional[str] = None
-    error: Optional[str] = None
-    created_at: str
-    updated_at: str
-
 
 @app.on_event("startup")
 async def startup():
@@ -76,12 +53,6 @@ async def health():
 
 @app.post("/buckets", response_model=BucketCreateResponse)
 async def create_bucket(request: BucketCreateRequest):
-    if len(request.bucket_name) < 3:
-        raise HTTPException(status_code=400, detail="Bucket name must be at least 3 characters")
-    
-    if not request.bucket_name.isalnum() and "-" not in request.bucket_name:
-        raise HTTPException(status_code=400, detail="Bucket name must be alphanumeric (hyphens allowed)")
-    
     job_id = str(uuid.uuid4())
     
     try:
