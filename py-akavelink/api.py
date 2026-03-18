@@ -4,7 +4,7 @@ import uuid
 import asyncpg
 import os
 from worker import create_bucket_task
-from schemas import BucketCreateRequest, BucketCreateResponse, JobStatusResponse
+from schemas import BucketCreateRequest, BucketCreateResponse, JobStatus, JobStatusResponse, BucketDeleteRequest, BucketDeleteResponse
 
 app = FastAPI(title="py-akavelink")
 
@@ -52,28 +52,59 @@ async def health():
 
 
 @app.post("/buckets", response_model=BucketCreateResponse)
-async def create_bucket(request: BucketCreateRequest):
+async def create_bucket(request: BucketCreateRequest): 
     job_id = str(uuid.uuid4())
-    
+    created_at = datetime.now()    
     try:
         async with db_pool.acquire() as conn:
             await conn.execute("""
-                INSERT INTO bucket_jobs (id, bucket_name, status, created_at, updated_at)
-                VALUES ($1, $2, $3, $4, $5)
-            """, job_id, request.bucket_name, "queued", datetime.utcnow(), datetime.utcnow())
+                INSERT INTO bucket_jobs (id, bucket_name, status)
+                VALUES ($1, $2, $3)
+            """, job_id, request.bucket_name, "queued", created_at, created_at)
         
         create_bucket_task.delay(job_id, request.bucket_name)
         
         return BucketCreateResponse(
             job_id=job_id,
             bucket_name=request.bucket_name,
-            status="queued",
-            message="Bucket creation job queued successfully"
+            status=JobStatus.queued,
         )
     
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to queue bucket creation: {str(e)}")
 
+@app.post("/buckets/delete", response_model=BucketDeleteResponse)
+async def delete_bucket(request: BucketDeleteRequest):
+    job_id = str(uuid.uuid4())
+    created_at = datetime.now()
+    try:
+        async with db_pool.acquire() as conn:
+            await conn.execute(
+                """
+                INSERT INTO bucket_jobs (id, bucket_name, status, created_at, updated_at)
+                VALUES ($1, $2, $3, $4, $5)
+                """,
+                job_id,
+                request.bucket_name,
+                "queued",
+                created_at,
+                created_at,
+            )
+
+        # TODO: implement delete_bucket_task in worker.py and call it here
+        # delete_bucket_task.delay(job_id, request.bucket_name)
+
+        return BucketDeleteResponse(
+            job_id=job_id,
+            bucket_name=request.bucket_name,
+            status=JobStatus.queued,
+        )
+
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to queue bucket deletion: {str(e)}",
+        )
 
 @app.get("/buckets/jobs/{job_id}", response_model=JobStatusResponse)
 async def get_job_status(job_id: str):
@@ -92,11 +123,11 @@ async def get_job_status(job_id: str):
         return JobStatusResponse(
             job_id=str(row['id']),
             bucket_name=row['bucket_name'],
-            status=row['status'],
+            status=JobStatus(row['status']),
             tx_hash=row['tx_hash'],
             error=row['error'],
-            created_at=row['created_at'].isoformat(),
-            updated_at=row['updated_at'].isoformat()
+            created_at=row['created_at'],
+            updated_at=row['updated_at']
         )
     
     except HTTPException:
