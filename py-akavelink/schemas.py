@@ -62,11 +62,19 @@ class FileUploadResponse(BaseModel):
     job_id: str
     bucket_name: str
     file_name: str
-    root_cid: str
-    encoded_size: int
-    actual_size: int
     status: JobStatus
 
+class FileJobStatusResponse(BaseModel):
+    job_id: str
+    bucket_name: str
+    file_name: str
+    status: JobStatus
+    root_cid: Optional[str] = None
+    encoded_size: Optional[int] = None
+    actual_size: Optional[int] = None
+    error: Optional[str] = None
+    created_at: datetime
+    updated_at: datetime
 
 class FileDeleteRequest(BaseModel):
     bucket_name: str

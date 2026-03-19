@@ -1,10 +1,12 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, File, UploadFile, Form
 from datetime import datetime
 import uuid
 import asyncpg
 import os
+import shutil
+import tempfile
 from worker import create_bucket_task
-from schemas import BucketCreateRequest, BucketCreateResponse, JobStatus, JobStatusResponse, BucketDeleteRequest, BucketDeleteResponse
+from schemas import BucketCreateRequest, BucketCreateResponse, JobStatus, JobStatusResponse, BucketDeleteRequest, BucketDeleteResponse, FileUploadRequest, FileUploadResponse
 
 app = FastAPI(title="py-akavelink")
 
@@ -58,8 +60,8 @@ async def create_bucket(request: BucketCreateRequest):
     try:
         async with db_pool.acquire() as conn:
             await conn.execute("""
-                INSERT INTO bucket_jobs (id, bucket_name, status)
-                VALUES ($1, $2, $3)
+                INSERT INTO bucket_jobs (id, bucket_name, status, created_at, updated_at)
+                VALUES ($1, $2, $3, $4, $5)
             """, job_id, request.bucket_name, "queued", created_at, created_at)
         
         create_bucket_task.delay(job_id, request.bucket_name)
@@ -161,3 +163,42 @@ async def list_buckets():
     
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
+    
+@app.post("/files/upload", response_model=FileUploadResponse)
+async def upload_file(bucket_name: str = Form(...), file: UploadFile = File(...)):
+    job_id = str(uuid.uuid4())
+    created_at = datetime.now()
+    file_name = file.filename
+    
+    upload_dir = f"/tmp/akave_uploads/{job_id}"
+    os.makedirs(upload_dir, exist_ok=True)
+    temp_path = f"{upload_dir}/{file_name}"
+    
+    try:
+        with open(temp_path, "wb") as f:
+            shutil.copyfileobj(file.file, f)
+            
+        async with db_pool.acquire() as conn:
+            await conn.execute(
+                """
+                INSERT INTO file_jobs (id, job_type, bucket_name, file_name, status, created_at, updated_at)
+                VALUES ($1, $2, $3, $4, $5, $6, $7)
+                """,
+                job_id,
+                "upload",
+                bucket_name,
+                file_name,
+                "queued",
+            )
+            
+        # upload_file_task.delay(job_id, bucket_name, file_name, temp_path)  # TODO: wire in worker
+
+        return FileUploadResponse(
+            job_id=job_id,
+            bucket_name=bucket_name,
+            file_name=file_name,
+            status=JobStatus.queued,
+        )
+    
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to upload file: {str(e)}")
